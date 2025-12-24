@@ -1,6 +1,7 @@
 using BepInEx;
 using RoR2;
 using RoR2.Navigation;
+using RoR2.Skills;
 using R2API;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -12,13 +13,14 @@ namespace CombinableTurrets
     [BepInDependency(RecalculateStatsAPI.PluginGUID)]
 
     // Metadata
-    [BepInPlugin("Samuel17.CombinableTurrets", "CombinableTurrets", "1.0.0")]
+    [BepInPlugin("Samuel17.CombinableTurrets", "CombinableTurrets", "1.0.1")]
 
     public class Main : BaseUnityPlugin
     {
         // Load addressables
         public static GameObject turretPrefab = Addressables.LoadAssetAsync<GameObject>("RoR2/Base/Drones/Turret1Body.prefab").WaitForCompletion();
         public static GameObject teleportHelperPrefab = Addressables.LoadAssetAsync<GameObject>("RoR2/Base/Common/DirectorSpawnProbeHelperPrefab.prefab").WaitForCompletion();
+        public static SkillDef turretSkillDef = Addressables.LoadAssetAsync<SkillDef>("RoR2/Base/Drones/Turret1BodyTurret.asset").WaitForCompletion();
 
         // Fields
         public static int extraBulletsPerTier = 20;
@@ -131,6 +133,12 @@ namespace CombinableTurrets
                     {
                         args.primarySkill.bonusStockAdd += extraBulletsPerTier * itemCount;
                         args.attackSpeedTotalMult *= 1 + extraAtkSpeedMultiplierPerTier * itemCount;
+
+                        // Recharge all stocks at once, regardless of count
+                        if (body.skillLocator && body.skillLocator.primary && body.skillLocator.primary.skillDef && body.skillLocator.primary.skillDef == turretSkillDef)
+                        {
+                            body.skillLocator.primary.skillDef.rechargeStock = body.skillLocator.primary.maxStock;
+                        }
                     }
                 }
             }
