@@ -6,6 +6,7 @@ using R2API;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using MonoMod.Cil;
+using Mono.Cecil.Cil;
 
 namespace CombinableTurrets
 {
@@ -13,7 +14,7 @@ namespace CombinableTurrets
     [BepInDependency(RecalculateStatsAPI.PluginGUID)]
 
     // Metadata
-    [BepInPlugin("Samuel17.CombinableTurrets", "CombinableTurrets", "1.0.1")]
+    [BepInPlugin("Samuel17.CombinableTurrets", "CombinableTurrets", "1.0.2")]
 
     public class Main : BaseUnityPlugin
     {
@@ -39,32 +40,37 @@ namespace CombinableTurrets
                 {
                     turretDef.canCombine = true;
                 }
+
+                // Main combining hook
+                IL.RoR2.DroneCombinerController.TryGetCombinableDrones += SkipBodyFlag;
             };
 
-            // Drone body flag is no longer required to be combinable
-            IL.RoR2.DroneCombinerController.TryGetCombinableDrones += (il) =>
-            {
-                ILCursor c = new(il);
-
-                if (
-                    c.TryGotoNext(MoveType.Before,
-                    x => x.MatchLdfld<CharacterBody>(nameof(CharacterBody.bodyFlags))
-                ))
-                {
-                    c.RemoveRange(3); // I don't get checking for the Drone body flag, you're already checking for canCombine. Remove that.
-                }
-                else
-                {
-                    Logger.LogError("Combinable Gunner Turret hook failed!");
-                }
-            };
-
-            // Actual combining part
+            // Secondary combining hooks
             On.RoR2.TeleportHelper.OnTeleport_GameObject_Vector3_Vector3_Quaternion_bool += TurretException;
             On.EntityStates.DroneCombiner.DroneCombinerCombining.UpgradeAndEjectDrone += TeleportNearby;
 
             // Turret upgrade bonus
             RecalculateStatsAPI.GetStatCoefficients += GunnerTurretBonus;
+        }
+
+        // Drone body flag is no longer required to be combinable
+        private void SkipBodyFlag(ILContext il)
+        {
+            ILCursor c = new(il);
+
+            if (
+                !c.TryGotoNext(MoveType.After,
+                x => x.MatchLdloc(out _),
+                x => x.MatchLdfld<CharacterBody>(nameof(CharacterBody.bodyFlags)),
+                x => x.MatchLdcI4((int)CharacterBody.BodyFlags.Drone),
+                x => x.MatchAnd()
+            ))
+            {
+                Log.Error("Combinable Gunner Turret hook failed!");
+            }
+
+            c.Emit(OpCodes.Pop);
+            c.Emit(OpCodes.Ldc_I4_1); // I don't get checking for the Drone body flag, you're already checking for canCombine. Skip that.
         }
 
         // If combining Gunner Turrets, just don't call this method at all or it'll break
@@ -88,7 +94,7 @@ namespace CombinableTurrets
         {
             orig(self, drone);
 
-            if (drone)
+            if (drone && drone.gameObject)
             {
                 if (BodyCatalog.GetBodyPrefab(drone.bodyIndex) == turretPrefab)
                 {
@@ -117,6 +123,17 @@ namespace CombinableTurrets
                             EffectManager.SimpleEffect(teleportEffectPrefab, position, Quaternion.identity, true);
                         }
                         Destroy(teleportDestinationHelper);
+
+                        // Orient to floor
+                        Transform transform = drone.gameObject.transform;
+                        if (transform)
+                        {
+                            Vector3 up = transform.up;
+                            if (Physics.Raycast(new Ray(position + up, -up), out var hitInfo, 2f, LayerIndex.world.mask))
+                            {
+                                transform.up = hitInfo.normal;
+                            }
+                        }
                     }
                 }
             }
