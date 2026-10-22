@@ -1,3 +1,7 @@
+## 1.0.3
+
+- On account of Gunner Turrets now being repairable, upgraded turrets now retain their upgrade level when broken.
+
 ## 1.0.2
 
 - Adjusted the IL hook to make this mod play nicer with other mods. (Thank you score!)

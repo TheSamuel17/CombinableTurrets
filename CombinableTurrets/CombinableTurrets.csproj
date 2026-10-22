@@ -15,12 +15,12 @@
 		<PackageReference Include="BepInEx.Core" Version="5.4.21" />
 
 		<PackageReference Include="R2API.Core" Version="5.*" />
-		<PackageReference Include="R2API.RecalculateStats" Version="1.*" />
+		<PackageReference Include="R2API.RecalculateStats" Version="1.7.*" />
 
-		<PackageReference Include="UnityEngine.Modules" Version="2021.3.33" IncludeAssets="compile" />
-		<PackageReference Include="RiskOfRain2.GameLibs" Version="1.4.1-r.0" />
-		<PackageReference Include="MMHOOK.RoR2" Version="2025.12.9" NoWarn="NU1701" />
-		<PackageReference Include="RoR2BepInExPack" Version="1.43.*" />
+		<PackageReference Include="UnityEngine.Modules" Version="2021.3.45" IncludeAssets="compile" />
+		<PackageReference Include="RiskOfRain2.GameLibs" Version="1.5.0-r.1" />
+		<PackageReference Include="MMHOOK.RoR2" Version="2026.10.8" NoWarn="NU1701" />
+		<PackageReference Include="RoR2BepInExPack" Version="1.47.*" />
 	</ItemGroup>
 
 	<ItemGroup>
